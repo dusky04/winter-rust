@@ -1,8 +1,3 @@
-// TODO:
-// f64 - Scalar -> Scaler
-// f64 + Scalar -> Scalar
-// f64 * Scalar -> Scalar
-
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
@@ -12,11 +7,15 @@ use std::{
     hash::Hash,
     ops::{Add, Mul, Sub},
 };
+
+use crate::topo_sort;
+
+#[derive(Debug, Clone)]
 pub struct Scalar {
     pub value: f64,
     pub grad: f64,
     pub _operation: Option<String>,
-    _children: Option<HashSet<Scalar>>,
+    pub _children: Option<HashSet<Scalar>>,
 }
 
 impl Scalar {
@@ -29,9 +28,16 @@ impl Scalar {
         }
     }
 
-    // pub fn grad(&mut self) {
-    //     self.grad = 0.0
-    // }
+    pub fn backward(&mut self) {
+        let mut sorted_nodes: Vec<Scalar> = Vec::new();
+        let mut visited: HashSet<Scalar> = HashSet::new();
+        topo_sort::topological_sort(self, &mut visited, &mut sorted_nodes);
+
+        self.grad = 1.0;
+        for node in sorted_nodes.iter().rev() {
+            // node._backward()
+        }
+    }
 }
 
 impl Display for Scalar {
@@ -53,12 +59,17 @@ impl Hash for Scalar {
 // Scalar + Scalar -> Scalar
 impl Add for Scalar {
     type Output = Scalar;
-    fn add(self, other: Self) -> Scalar {
-        Scalar::from(
+    fn add(self, other: Scalar) -> Scalar {
+        let mut out = Scalar::from(
             self.value + other.value,
             Some(String::from("+")),
             Some(HashSet::from([self, other])),
-        )
+        );
+
+        // self.grad += out.grad;
+        // other.grad += out.grad;
+
+        out
     }
 }
 
